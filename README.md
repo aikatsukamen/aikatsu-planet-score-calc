@@ -1,0 +1,2 @@
+# Aikatsu Planet Score Calculator
+
