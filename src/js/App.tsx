@@ -99,6 +99,108 @@ const App: React.FC = () => {
         },
       ],
     },
+    {
+      name: 'Magical Door ',
+      notes: [
+        {
+          level: 1,
+          op: 13,
+          main: 6,
+          climax: 15,
+          finale: 7,
+        },
+        {
+          level: 3,
+          op: 21,
+          main: 17,
+          climax: 25,
+          finale: 16,
+        },
+        {
+          level: 5,
+          op: 42,
+          main: 22,
+          climax: 44,
+          finale: 39,
+        },
+      ],
+    },
+    {
+      name: 'またまたまたまたまた明日',
+      notes: [
+        {
+          level: 1,
+          op: 15,
+          main: 11,
+          climax: 9,
+          finale: 13,
+        },
+        {
+          level: 5,
+          op: 44,
+          main: 35,
+          climax: 37,
+          finale: 47,
+        },
+      ],
+    },
+    {
+      name: 'レディ・レディ・レディ',
+      notes: [
+        {
+          level: 1,
+          op: 10,
+          main: 13,
+          climax: 11,
+          finale: 11,
+        },
+        {
+          level: 5,
+          op: 38,
+          main: 54,
+          climax: 41,
+          finale: 35,
+        },
+      ],
+    },
+    {
+      name: 'プチプラEveryday',
+      notes: [
+        {
+          level: 1,
+          op: 10,
+          main: 8,
+          climax: 21,
+          finale: 14,
+        },
+        {
+          level: 5,
+          op: 39,
+          main: 37,
+          climax: 65,
+          finale: 71,
+        },
+      ],
+    },
+    {
+      name: 'Inner Voice',
+      notes: [
+        {
+          level: 1,
+          op: 6,
+          main: 10,
+          climax: 9,
+          finale: 14,
+        },
+        {
+          level: 5,
+          op: 36,
+          main: 47,
+          climax: 32,
+          finale: 57,
+        },
+      ],
+    }
   ]);
 
   const [musicSelect, setMusicSelect] = React.useState('-');
@@ -169,7 +271,7 @@ const App: React.FC = () => {
     setScoreup(list);
   };
   // ドレシアチャンスボーナス
-  type ChanceBonus = 0 | 1 | 2 | 3;
+  type ChanceBonus = 0 | 1 | 2 | 3 | 5;
   const [chanceBonus, setChanceBonus] = React.useState<[ChanceBonus, ChanceBonus, ChanceBonus]>([0, 0, 0]);
   const changeChanceBonus = (index: number) => (event: React.ChangeEvent<{ name?: string | undefined; value: Scoreup }>) => {
     const list: typeof chanceBonus = [...chanceBonus];
@@ -191,6 +293,8 @@ const App: React.FC = () => {
       typeLevelBonus: number;
       /** ドレシアレベルによるボーナス */
       dressiaLevelBonus: number;
+      /** コンボボーナス */
+      comboBonus: number;
       /** 1ノーツ合計 */
       sum: number;
     }[]
@@ -202,8 +306,6 @@ const App: React.FC = () => {
     scoreUp: number;
     /** チャンスボーナス */
     chance: number;
-    /** コンボボーナス */
-    combo: number;
     /** 区間合計点 */
     sum: number;
   };
@@ -213,14 +315,6 @@ const App: React.FC = () => {
   React.useEffect(() => {
     const list: typeof notesScore = [];
     const allNotes = musicInfo.op + musicInfo.main + musicInfo.climax + musicInfo.finale;
-
-    /** 各区間の最大コンボ数 */
-    const comboNum: { [key in Battle]: number } = {
-      op: 0,
-      main: 0,
-      climax: 0,
-      finale: 0,
-    };
 
     // 単ノーツの合計点を計算
     for (let i = 0; i < allNotes; i++) {
@@ -272,50 +366,61 @@ const App: React.FC = () => {
           M: 0,
         },
       };
-      const judgeScore = JUDGE_SCORE[battle][judge];
+      const opjudgeScore = JUDGE_SCORE['op'][judge];
 
-      // 現在のコンボ数を計算し、最大数を超えてたら上書き
       let beforeCombo = 0;
       if (i !== 0) {
         const before = list[i - 1];
         beforeCombo = before.combo;
       }
+      /** 現在のコンボ数 */
       const combo = judge !== 'M' && judge !== 'S' ? beforeCombo + 1 : 0;
-      if (comboNum[battle] < combo) comboNum[battle] = combo;
 
-      const typeLevelBonus = battle !== 'finale' ? (typeLevel[battleIndex] - 1) * 10 : 0;
-      const DRESSIA_LEVEL_BASE = {
-        op: {
-          P: 84,
-          V: 72,
-          G: 60,
-          S: 48,
-          M: 0,
-        },
-        main: {
-          P: 96,
-          V: 84,
-          G: 72,
-          S: 60,
-          M: 0,
-        },
-        climax: {
-          P: 108,
-          V: 96,
-          G: 84,
-          S: 72,
-          M: 0,
-        },
-      };
-      const dressiaLevelBonus = battle !== 'finale' ? (dressiaLevel[battleIndex] - 1) * DRESSIA_LEVEL_BASE[battle][judge] : 0;
+      const typeLevelBonus = battle !== 'finale' ? Math.floor(typeLevel[battleIndex]  / 2) * 10 : 0;
+
+      let dressiaLevelBonus = battle === 'finale' ? 0 : (opjudgeScore + Math.floor(typeLevelBonus)) * (0.12 * (dressiaLevel[battleIndex] - 1));
+      let opKisoten = opjudgeScore + typeLevelBonus + dressiaLevelBonus;
+      const NAZO_BAIRITSU = 1.1466666666666;
+      let mainKisoten = Math.ceil(opKisoten * NAZO_BAIRITSU * 10) / 10;
+      let climaxKisoten = Math.ceil((mainKisoten + (mainKisoten - opKisoten)) * 10) / 10;
+
+      let comboSoten = combo < 3 ? 0 : (100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12));
+      if(battle === 'finale') comboSoten = combo < 3 ? 0 : 10; // フィナーレのコンボボーナスの基礎点は10点固定
+
+      let comboMultiply = (1 + Math.floor((combo - 1) / 10));
+      if(comboMultiply > 10) comboMultiply = 10;  // 10倍で打ち止め 
+      // console.log(`combo: ${combo} comboSoten: ${comboSoten}  comboMultiply: ${comboMultiply}`);
+      const comboBonus = comboSoten * comboMultiply;
+
+      let baseScore = 0;
+      switch(battle) {
+        case 'op': {
+          baseScore = opKisoten;
+          break;
+        }
+        case 'main': {
+          baseScore = mainKisoten;
+          break;
+        }
+        case 'climax': {
+          baseScore = climaxKisoten;
+          break;
+        }
+        case 'finale': {
+          baseScore = JUDGE_SCORE['finale'][judge];
+          break;
+        }
+
+      }
 
       const oneNote: typeof list[0] = {
         battle: battle,
-        judge: judgeScore,
+        judge: baseScore,
         combo: combo,
         typeLevelBonus: typeLevelBonus,
         dressiaLevelBonus: dressiaLevelBonus,
-        sum: judgeScore + typeLevelBonus + dressiaLevelBonus,
+        comboBonus: comboBonus,
+        sum: baseScore + comboBonus,
       };
 
       list.push(oneNote);
@@ -324,10 +429,10 @@ const App: React.FC = () => {
     setNotesScore(list);
 
     // 各区間の基礎点を計算
-    const op = list.filter((item) => item.battle === 'op').reduce((prev, cur) => prev + cur.sum, 0);
-    const main = list.filter((item) => item.battle === 'main').reduce((prev, cur) => prev + cur.sum, 0);
-    const climax = list.filter((item) => item.battle === 'climax').reduce((prev, cur) => prev + cur.sum, 0);
-    const finale = list.filter((item) => item.battle === 'finale').reduce((prev, cur) => prev + cur.sum, 0);
+    const op = Math.floor(list.filter((item) => item.battle === 'op').reduce((prev, cur) => prev + cur.sum, 0));
+    const main = Math.floor(list.filter((item) => item.battle === 'main').reduce((prev, cur) => prev + cur.sum, 0));
+    const climax = Math.floor(list.filter((item) => item.battle === 'climax').reduce((prev, cur) => prev + cur.sum, 0));
+    const finale = Math.floor(list.filter((item) => item.battle === 'finale').reduce((prev, cur) => prev + cur.sum, 0));
 
     const result: ScoreSum[] = [];
     for (let i = 0; i < 3; i++) {
@@ -354,18 +459,15 @@ const App: React.FC = () => {
         base: base,
         scoreUp: 0,
         chance: 0,
-        combo: 0,
         sum: 0,
       };
-      // コンボボーナス
-      if (comboNum[battle] > 2) res.combo = (comboNum[battle] - 2) * 100;
 
       // たまりやすい
-      res.scoreUp = Math.floor((res.base + res.combo) * (scoreUp[i] * 0.05));
+      res.scoreUp = Math.floor((res.base) * (scoreUp[i] * 0.05));
       // チャンスボーナス
-      res.chance = Math.floor((res.base + res.combo + res.scoreUp) * (chanceBonus[i] * 0.1));
+      res.chance = Math.floor((res.base + res.scoreUp) * (chanceBonus[i] * 0.1));
       // 区間合計点
-      res.sum = res.base + res.combo + res.scoreUp + res.chance;
+      res.sum = res.base + res.scoreUp + res.chance;
 
       result.push(res);
     }
@@ -473,18 +575,21 @@ const App: React.FC = () => {
             <MenuItem value={1}>↑</MenuItem>
             <MenuItem value={2}>↑↑</MenuItem>
             <MenuItem value={3}>↑↑↑</MenuItem>
+            <MenuItem value={5}>↑↑↑↑</MenuItem>
           </Select>
           <Select className={classes.input} variant={'outlined'} value={chanceBonus[1]} onChange={changeChanceBonus(1)}>
             <MenuItem value={0}>なし</MenuItem>
             <MenuItem value={1}>↑</MenuItem>
             <MenuItem value={2}>↑↑</MenuItem>
             <MenuItem value={3}>↑↑↑</MenuItem>
+            <MenuItem value={5}>↑↑↑↑</MenuItem>
           </Select>
           <Select className={classes.input} variant={'outlined'} value={chanceBonus[2]} onChange={changeChanceBonus(2)}>
             <MenuItem value={0}>なし</MenuItem>
             <MenuItem value={1}>↑</MenuItem>
             <MenuItem value={2}>↑↑</MenuItem>
             <MenuItem value={3}>↑↑↑</MenuItem>
+            <MenuItem value={5}>↑↑↑↑</MenuItem>
           </Select>
         </div>
       </div>
@@ -500,7 +605,6 @@ const App: React.FC = () => {
         <thead>
           <th>バトル</th>
           <th>単ノーツ合計点</th>
-          <th>コンボボーナス</th>
           <th>たまりやすいボーナス</th>
           <th>チャンスボーナスアップ</th>
           <th>合計スコア</th>
@@ -509,7 +613,6 @@ const App: React.FC = () => {
           <tr>
             <td>オープニング</td>
             <td>{scoreSum[0]?.base ?? ''}</td>
-            <td>{scoreSum[0]?.combo ?? ''}</td>
             <td>{scoreSum[0]?.scoreUp ?? ''}</td>
             <td>{scoreSum[0]?.chance ?? ''}</td>
             <td>{scoreSum[0]?.sum ?? ''}</td>
@@ -517,7 +620,6 @@ const App: React.FC = () => {
           <tr>
             <td>メイン</td>
             <td>{scoreSum[1]?.base ?? ''}</td>
-            <td>{scoreSum[1]?.combo ?? ''}</td>
             <td>{scoreSum[1]?.scoreUp ?? ''}</td>
             <td>{scoreSum[1]?.chance ?? ''}</td>
             <td>{scoreSum[1]?.sum ?? ''}</td>
@@ -525,7 +627,6 @@ const App: React.FC = () => {
           <tr>
             <td>クライマックス</td>
             <td>{scoreSum[2]?.base ?? ''}</td>
-            <td>{scoreSum[2]?.combo ?? ''}</td>
             <td>{scoreSum[2]?.scoreUp ?? ''}</td>
             <td>{scoreSum[2]?.chance ?? ''}</td>
             <td>{scoreSum[2]?.sum ?? ''}</td>
@@ -547,9 +648,8 @@ const App: React.FC = () => {
             <th style={{ width: 50 }}>バトル</th>
             <th style={{ width: 160 }}>判定</th>
             <th style={{ width: 120 }}>現在のコンボ数</th>
-            <th style={{ width: 120 }}>判定基礎点</th>
-            <th style={{ width: 110 }}>タイプレベルボーナス</th>
-            <th style={{ width: 120 }}>ドレシアレベルボーナス</th>
+            <th style={{ width: 120 }}>バトル・判定基礎点</th>
+            <th style={{ width: 120 }}>コンボボーナス</th>
             <th style={{ width: 120, borderLeft: '1px solid' }}>1ノーツ合計点</th>
           </div>
           <div>
@@ -569,8 +669,7 @@ const App: React.FC = () => {
                   </div>
                   <div style={{ width: 120 }}>{notes.combo}</div>
                   <div style={{ width: 120 }}>{notes.judge}</div>
-                  <div style={{ width: 110 }}>{notes.typeLevelBonus}</div>
-                  <div style={{ width: 120 }}>{notes.dressiaLevelBonus}</div>
+                  <div style={{ width: 120 }}>{notes.comboBonus}</div>
                   <div style={{ width: 120, borderLeft: '1px solid' }}>{notes.sum}</div>
                 </div>
               );
