@@ -556,6 +556,8 @@ const App: React.FC = () => {
 
   return (
     <div className={classes.root}>
+      <div className="SW-update-dialog" />
+
       {/* 曲・難易度選択 */}
       <div>楽曲・難易度選択</div>
       <Select style={{ width: 400 }} variant={'outlined'} value={musicSelect} onChange={chanageMusic}>
