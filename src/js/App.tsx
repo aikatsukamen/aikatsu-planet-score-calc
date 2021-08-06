@@ -212,6 +212,13 @@ const App: React.FC = () => {
           finale: 19,
         },
         {
+          level: 3,
+          op: 14,
+          main: 43,
+          climax: 14,
+          finale: 46,
+        },
+        {
           level: 4,
           op: 21,
           main: 50,
