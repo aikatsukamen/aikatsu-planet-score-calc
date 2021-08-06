@@ -563,7 +563,7 @@ const App: React.FC = () => {
 
   return (
     <div className={classes.root}>
-      <div className="SW-update-dialog" />
+      <div className="SW-update-dialog"></div>
 
       {/* 曲・難易度選択 */}
       <div>楽曲・難易度選択</div>
