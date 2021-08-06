@@ -288,7 +288,7 @@ const App: React.FC = () => {
     setDressiaLevel(list);
   };
   // バトルごとのタイプレベル
-  const [typeLevel, setTypeLevel] = React.useState<[number, number, number]>([1, 1, 1]);
+  const [typeLevel, setTypeLevel] = React.useState<[number, number, number]>([10, 10, 10]);
   const inputTypeLevel = (index: number) => (event: React.ChangeEvent<{ name?: string | undefined; value: string }>) => {
     const list: typeof typeLevel = [...typeLevel];
     const l = Number(event.target.value);
@@ -318,6 +318,8 @@ const App: React.FC = () => {
     {
       /** バトル種別 */
       battle: Battle;
+      /** 判定 */
+      judgeType: JUDGE;
       /** 判定による基礎点 */
       judge: number;
       /** ここまでのコンボ数 */
@@ -341,6 +343,14 @@ const App: React.FC = () => {
     chance: number;
     /** 区間合計点 */
     sum: number;
+    /** 判定総数 */
+    judgeSum: {
+      P: number;
+      V: number;
+      G: number;
+      S: number;
+      M: number;
+    };
   };
   const [scoreSum, setScoreSum] = React.useState<ScoreSum[]>([]);
 
@@ -387,7 +397,7 @@ const App: React.FC = () => {
       /** タイプレベルボーナス。最大50 */
       const typeLevelBonus = battle !== 'finale' ? Math.floor(typeLevel[battleIndex] / 2) * 10 : 0;
 
-      // 判定
+      /** このノーツにおける判定 */
       const judge = judges[i];
 
       // コンボ
@@ -480,6 +490,7 @@ const App: React.FC = () => {
 
       const oneNote: typeof list[0] = {
         battle: battle,
+        judgeType: judge,
         judge: baseScore,
         combo: combo,
         typeLevelBonus: typeLevelBonus,
@@ -543,17 +554,29 @@ const App: React.FC = () => {
           break;
         case 2:
           base = climax;
+          battle = 'climax';
+          break;
+        case 3:
+          base = finale;
           battle = 'finale';
           break;
         default:
           battle = 'op';
       }
+      const battleNotes = list.filter((item) => item.battle === battle);
 
       const res: ScoreSum = {
         base: base,
         scoreUp: 0,
         chance: 0,
         sum: 0,
+        judgeSum: {
+          P: battleNotes.filter((item) => item.judgeType === 'P').length,
+          V: battleNotes.filter((item) => item.judgeType === 'V').length,
+          G: battleNotes.filter((item) => item.judgeType === 'G').length,
+          S: battleNotes.filter((item) => item.judgeType === 'S').length,
+          M: battleNotes.filter((item) => item.judgeType === 'M').length,
+        },
       };
 
       // たまりやすい
@@ -696,8 +719,55 @@ const App: React.FC = () => {
 
       <Divider style={{ height: 20 }} />
 
+      <Table style={{ width: 600, textAlign: 'left' }}>
+        <thead>
+          <th style={{ width: 150 }}>バトル</th>
+          <th style={{ width: 50 }}>P</th>
+          <th style={{ width: 50 }}>V</th>
+          <th style={{ width: 50 }}>G</th>
+          <th style={{ width: 50 }}>S</th>
+          <th style={{ width: 50 }}>M</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td>オープニング</td>
+            <td>{scoreSum[0]?.judgeSum.P ?? ''}</td>
+            <td>{scoreSum[0]?.judgeSum.V ?? ''}</td>
+            <td>{scoreSum[0]?.judgeSum.G ?? ''}</td>
+            <td>{scoreSum[0]?.judgeSum.S ?? ''}</td>
+            <td>{scoreSum[0]?.judgeSum.M ?? ''}</td>
+          </tr>
+          <tr>
+            <td>メイン</td>
+            <td>{scoreSum[1]?.judgeSum.P ?? ''}</td>
+            <td>{scoreSum[1]?.judgeSum.V ?? ''}</td>
+            <td>{scoreSum[1]?.judgeSum.G ?? ''}</td>
+            <td>{scoreSum[1]?.judgeSum.S ?? ''}</td>
+            <td>{scoreSum[1]?.judgeSum.M ?? ''}</td>
+          </tr>
+          <tr>
+            <td>クライマックス</td>
+            <td>{scoreSum[2]?.judgeSum.P ?? ''}</td>
+            <td>{scoreSum[2]?.judgeSum.V ?? ''}</td>
+            <td>{scoreSum[2]?.judgeSum.G ?? ''}</td>
+            <td>{scoreSum[2]?.judgeSum.S ?? ''}</td>
+            <td>{scoreSum[2]?.judgeSum.M ?? ''}</td>
+          </tr>
+          <tr>
+            <td>フィナーレ</td>
+            <td>{scoreSum[3]?.judgeSum.P ?? ''}</td>
+            <td>{scoreSum[3]?.judgeSum.V ?? ''}</td>
+            <td>{scoreSum[3]?.judgeSum.G ?? ''}</td>
+            <td>{scoreSum[3]?.judgeSum.S ?? ''}</td>
+            <td>{scoreSum[3]?.judgeSum.M ?? ''}</td>
+          </tr>
+        </tbody>
+      </Table>
+
+      <Divider style={{ height: 20 }} />
+
       {/* 区間合計 */}
-      <Table style={{ width: 800 }}>
+      <Table style={{ width: 800, textAlign: 'left' }}>
         <thead>
           <th>バトル</th>
           <th>単ノーツ合計点</th>
@@ -728,9 +798,50 @@ const App: React.FC = () => {
             <td>{scoreSum[2]?.sum ?? ''}</td>
           </tr>
           <tr>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+          </tr>
+          <tr>
+            <td>O/M/C合計</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>{scoreSum[0]?.sum + scoreSum[1]?.sum + scoreSum[2]?.sum ?? ''}</td>
+          </tr>
+          {/* <tr>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+            <td>
+              <hr />
+            </td>
+          </tr> */}
+          {/* <tr>
             <td>フィナーレ</td>
             <td>{scoreSum[3]?.sum ?? ''}</td>
-          </tr>
+          </tr> */}
         </tbody>
       </Table>
 
