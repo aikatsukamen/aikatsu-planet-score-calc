@@ -457,7 +457,7 @@ const App: React.FC = () => {
         const main = kisotenList['main'][judgeto[0]];
         kisotenList['climax'][judgeto[1]] = main;
       }
-      kisotenList['climax']['P'] = kisotenList['main']['P'] + (kisotenList['main']['P'] - kisotenList['op']['P']);
+      kisotenList['climax']['P'] = Math.ceil(kisotenList['main']['P'] * 10 + (kisotenList['main']['P'] * 10 - kisotenList['op']['P'] * 10)) / 10;
       console.log(kisotenList);
 
       let comboSoten = combo < 3 ? 0 : 100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12);
