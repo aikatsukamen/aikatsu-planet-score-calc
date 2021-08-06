@@ -200,7 +200,26 @@ const App: React.FC = () => {
           finale: 57,
         },
       ],
-    }
+    },
+    {
+      name: 'ファンタジっくイマジネーション',
+      notes: [
+        {
+          level: 4,
+          op: 21,
+          main: 50,
+          climax: 18,
+          finale: 59,
+        },
+        {
+          level: 5,
+          op: 33,
+          main: 75,
+          climax: 30,
+          finale: 83,
+        },
+      ],
+    },
   ]);
 
   const [musicSelect, setMusicSelect] = React.useState('-');
@@ -292,7 +311,7 @@ const App: React.FC = () => {
       /** タイプレベルによるボーナス */
       typeLevelBonus: number;
       /** ドレシアレベルによるボーナス */
-      dressiaLevelBonus: number;
+      // dressiaLevelBonus: number;
       /** コンボボーナス */
       comboBonus: number;
       /** 1ノーツ合計 */
@@ -314,10 +333,27 @@ const App: React.FC = () => {
   // スコア再計算
   React.useEffect(() => {
     const list: typeof notesScore = [];
+    /** 全ノーツ数 */
     const allNotes = musicInfo.op + musicInfo.main + musicInfo.climax + musicInfo.finale;
+    const NAZO_BAIRITSU = 1.1466666666;
+    const JUDGE_SCORE_BASE = {
+      P: 700,
+      V: 600,
+      G: 500,
+      S: 400,
+      M: 0,
+    };
+    const JUDGE_SCORE_BASE_FINALE = {
+      P: 112,
+      V: 96,
+      G: 80,
+      S: 64,
+      M: 0,
+    };
 
     // 単ノーツの合計点を計算
     for (let i = 0; i < allNotes; i++) {
+      /** 今のバトル */
       let battle: Battle = 'op';
       let battleIndex = 0;
       if (i < musicInfo.op) {
@@ -333,41 +369,14 @@ const App: React.FC = () => {
         battle = 'finale';
         battleIndex = 3;
       }
+      // 判定ごとの基礎スコアを計算
+      /** タイプレベルボーナス。最大50 */
+      const typeLevelBonus = battle !== 'finale' ? Math.floor(typeLevel[battleIndex] / 2) * 10 : 0;
 
       // 判定
       const judge = judges[i];
-      const JUDGE_SCORE = {
-        op: {
-          P: 700,
-          V: 600,
-          G: 500,
-          S: 400,
-          M: 0,
-        },
-        main: {
-          P: 800,
-          V: 700,
-          G: 600,
-          S: 500,
-          M: 0,
-        },
-        climax: {
-          P: 900,
-          V: 800,
-          G: 700,
-          S: 600,
-          M: 0,
-        },
-        finale: {
-          P: 112,
-          V: 96,
-          G: 80,
-          S: 64,
-          M: 0,
-        },
-      };
-      const opjudgeScore = JUDGE_SCORE['op'][judge];
 
+      // コンボ
       let beforeCombo = 0;
       if (i !== 0) {
         const before = list[i - 1];
@@ -376,41 +385,83 @@ const App: React.FC = () => {
       /** 現在のコンボ数 */
       const combo = judge !== 'M' && judge !== 'S' ? beforeCombo + 1 : 0;
 
-      const typeLevelBonus = battle !== 'finale' ? Math.floor(typeLevel[battleIndex]  / 2) * 10 : 0;
+      const kisotenList = {
+        op: {
+          P: 0,
+          V: 0,
+          G: 0,
+          S: 0,
+          M: 0,
+        },
+        main: {
+          P: 0,
+          V: 0,
+          G: 0,
+          S: 0,
+          M: 0,
+        },
+        climax: {
+          P: 0,
+          V: 0,
+          G: 0,
+          S: 0,
+          M: 0,
+        },
+      };
 
-      let dressiaLevelBonus = battle === 'finale' ? 0 : (opjudgeScore + Math.floor(typeLevelBonus)) * (0.12 * (dressiaLevel[battleIndex] - 1));
-      let opKisoten = opjudgeScore + typeLevelBonus + dressiaLevelBonus;
-      const NAZO_BAIRITSU = 1.1466666666666;
-      let mainKisoten = Math.ceil(opKisoten * NAZO_BAIRITSU * 10) / 10;
-      let climaxKisoten = Math.ceil((mainKisoten + (mainKisoten - opKisoten)) * 10) / 10;
+      // OPの基礎点リストを作る
+      for (const judge of ['P', 'V', 'G', 'S', 'M']) {
+        const opjudgeScore: number = JUDGE_SCORE_BASE[judge];
+        /** ドレシアレベルボーナス */
+        const dressiaLevelBonus = battle === 'finale' ? 0 : (opjudgeScore + typeLevelBonus) * 0.12 * (dressiaLevel[battleIndex] - 1);
 
-      let comboSoten = combo < 3 ? 0 : (100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12));
-      if(battle === 'finale') comboSoten = combo < 3 ? 0 : 10; // フィナーレのコンボボーナスの基礎点は10点固定
+        /** OPの基礎点(判定+タイプレベル+ドレシアレベル) */
+        const opKisoten = judge === 'M' ? 0 : opjudgeScore + typeLevelBonus + dressiaLevelBonus;
 
-      let comboMultiply = (1 + Math.floor((combo - 1) / 10));
-      if(comboMultiply > 10) comboMultiply = 10;  // 10倍で打ち止め 
-      // console.log(`combo: ${combo} comboSoten: ${comboSoten}  comboMultiply: ${comboMultiply}`);
+        kisotenList['op'][judge] = opKisoten;
+      }
+
+      // Mainの基礎点リストを作る
+      for (const judgeto of [['P', 'V'], ['V', 'G'], ['G', 'S'], 'M']) {
+        const op = kisotenList['op'][judgeto[0]];
+        kisotenList['main'][judgeto[1]] = op;
+      }
+      kisotenList['main']['P'] = Math.ceil(kisotenList['op']['P'] * NAZO_BAIRITSU * 10) / 10;
+
+      // Climaxの基礎点リストを作る
+      for (const judgeto of [['P', 'V'], ['V', 'G'], ['G', 'S'], 'M']) {
+        const main = kisotenList['main'][judgeto[0]];
+        kisotenList['climax'][judgeto[1]] = main;
+      }
+      kisotenList['climax']['P'] = kisotenList['main']['P'] + (kisotenList['main']['P'] - kisotenList['op']['P']);
+      console.log(kisotenList);
+
+      let comboSoten = combo < 3 ? 0 : 100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12);
+      if (battle === 'finale') comboSoten = combo < 3 ? 0 : 10; // フィナーレのコンボボーナスの基礎点は10点固定
+
+      let comboMultiply = 1 + Math.floor((combo - 1) / 10);
+      if (comboMultiply > 10) comboMultiply = 10; // 91コンボ以上の10倍で打ち止め
+      console.log(`combo=${combo} comboSoten=${comboSoten}  comboMultiply=${comboMultiply}`);
       const comboBonus = comboSoten * comboMultiply;
 
-      let baseScore = 0;
-      switch(battle) {
+      let baseScore: number = 0;
+      switch (battle) {
         case 'op': {
-          baseScore = opKisoten;
+          baseScore = kisotenList[battle][judge];
           break;
         }
         case 'main': {
-          baseScore = mainKisoten;
+          baseScore = kisotenList[battle][judge];
           break;
         }
         case 'climax': {
-          baseScore = climaxKisoten;
+          baseScore = kisotenList[battle][judge];
           break;
         }
         case 'finale': {
-          baseScore = JUDGE_SCORE['finale'][judge];
+          baseScore = JUDGE_SCORE_BASE_FINALE[judge];
           break;
         }
-
       }
 
       const oneNote: typeof list[0] = {
@@ -418,7 +469,6 @@ const App: React.FC = () => {
         judge: baseScore,
         combo: combo,
         typeLevelBonus: typeLevelBonus,
-        dressiaLevelBonus: dressiaLevelBonus,
         comboBonus: comboBonus,
         sum: baseScore + comboBonus,
       };
@@ -429,9 +479,39 @@ const App: React.FC = () => {
     setNotesScore(list);
 
     // 各区間の基礎点を計算
-    const op = Math.floor(list.filter((item) => item.battle === 'op').reduce((prev, cur) => prev + cur.sum, 0));
-    const main = Math.floor(list.filter((item) => item.battle === 'main').reduce((prev, cur) => prev + cur.sum, 0));
-    const climax = Math.floor(list.filter((item) => item.battle === 'climax').reduce((prev, cur) => prev + cur.sum, 0));
+    const op = Math.floor(
+      list
+        .filter((item) => item.battle === 'op')
+        .map((item) => {
+          return {
+            ...item,
+            sum: item.sum * 10,
+          };
+        })
+        .reduce((prev, cur) => prev + cur.sum, 0) / 10,
+    );
+    const main = Math.floor(
+      list
+        .filter((item) => item.battle === 'main')
+        .map((item) => {
+          return {
+            ...item,
+            sum: item.sum * 10,
+          };
+        })
+        .reduce((prev, cur) => prev + cur.sum, 0) / 10,
+    );
+    const climax = Math.floor(
+      list
+        .filter((item) => item.battle === 'climax')
+        .map((item) => {
+          return {
+            ...item,
+            sum: item.sum * 10,
+          };
+        })
+        .reduce((prev, cur) => prev + cur.sum, 0) / 10,
+    );
     const finale = Math.floor(list.filter((item) => item.battle === 'finale').reduce((prev, cur) => prev + cur.sum, 0));
 
     const result: ScoreSum[] = [];
@@ -463,9 +543,9 @@ const App: React.FC = () => {
       };
 
       // たまりやすい
-      res.scoreUp = Math.floor((res.base) * (scoreUp[i] * 0.05));
+      res.scoreUp = Math.floor(res.base * (scoreUp[i] * 0.05));
       // チャンスボーナス
-      res.chance = Math.floor((res.base + res.scoreUp) * (chanceBonus[i] * 0.1));
+      res.chance = Math.floor(Math.floor(res.base + res.scoreUp) * (chanceBonus[i] * 0.1));
       // 区間合計点
       res.sum = res.base + res.scoreUp + res.chance;
 
@@ -478,7 +558,7 @@ const App: React.FC = () => {
     <div className={classes.root}>
       {/* 曲・難易度選択 */}
       <div>楽曲・難易度選択</div>
-      <Select style={{ width: 300 }} variant={'outlined'} value={musicSelect} onChange={chanageMusic}>
+      <Select style={{ width: 400 }} variant={'outlined'} value={musicSelect} onChange={chanageMusic}>
         {musicList.map((music) => {
           return music.notes.map((n) => {
             return <MenuItem value={`${n.level},${music.name}`}>{`${music.name} ★${n.level}`}</MenuItem>;
