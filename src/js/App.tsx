@@ -460,7 +460,7 @@ const App: React.FC = () => {
       kisotenList['climax']['P'] = Math.ceil(kisotenList['main']['P'] * 10 + (kisotenList['main']['P'] * 10 - kisotenList['op']['P'] * 10)) / 10;
       console.log(kisotenList);
 
-      let comboSoten = combo < 3 ? 0 : 100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12);
+      let comboSoten = combo < 3 ? 0 : Math.floor(100 * (1 + (dressiaLevel[battleIndex] - 1) * 0.12));
       if (battle === 'finale') comboSoten = combo < 3 ? 0 : 10; // フィナーレのコンボボーナスの基礎点は10点固定
 
       let comboMultiply = 1 + Math.floor((combo - 1) / 10);
