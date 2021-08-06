@@ -205,6 +205,13 @@ const App: React.FC = () => {
       name: 'ファンタジっくイマジネーション',
       notes: [
         {
+          level: 1,
+          op: 8,
+          main: 17,
+          climax: 6,
+          finale: 19,
+        },
+        {
           level: 4,
           op: 21,
           main: 50,
