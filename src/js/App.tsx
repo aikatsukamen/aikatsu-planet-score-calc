@@ -234,6 +234,18 @@ const App: React.FC = () => {
         },
       ],
     },
+    {
+      name: 'NeverNever',
+      notes: [
+        {
+          level: 5,
+          op: 43,
+          main: 82,
+          climax: 38,
+          finale: 56,
+        },
+      ],
+    },
   ]);
 
   const [musicSelect, setMusicSelect] = React.useState('-');
