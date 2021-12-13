@@ -265,6 +265,18 @@ const App: React.FC = () => {
         },
       ],
     },
+    {
+      name: 'Shu-Bi-Du-Bi☆スイング(仮)',
+      notes: [
+        {
+          level: 5,
+          op: 43,
+          main: 54,
+          climax: 51,
+          finale: 49,
+        },
+      ],
+    },
   ]);
 
   const [musicSelect, setMusicSelect] = React.useState('-');
