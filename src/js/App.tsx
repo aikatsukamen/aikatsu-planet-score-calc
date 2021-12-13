@@ -238,11 +238,30 @@ const App: React.FC = () => {
       name: 'NeverNever',
       notes: [
         {
+          level: 2,
+          op: 19,
+          main: 24,
+          climax: 14,
+          finale: 18,
+        },
+        {
           level: 5,
           op: 43,
           main: 82,
           climax: 38,
           finale: 56,
+        },
+      ],
+    },
+    {
+      name: 'Shu-Bi-Du-Bi☆スイング',
+      notes: [
+        {
+          level: 2,
+          op: 19,
+          main: 16,
+          climax: 19,
+          finale: 16,
         },
       ],
     },
