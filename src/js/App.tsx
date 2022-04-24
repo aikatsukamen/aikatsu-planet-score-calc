@@ -660,7 +660,7 @@ const App: React.FC = () => {
           <div>ドレシアレベル</div>
           <TextField
             type={'number'}
-            InputProps={{ inputProps: { min: 1, max: 15 } }}
+            InputProps={{ inputProps: { min: 1, max: 20 } }}
             className={classes.input}
             variant={'outlined'}
             value={dressiaLevel[0]}
@@ -669,7 +669,7 @@ const App: React.FC = () => {
           />
           <TextField
             type={'number'}
-            InputProps={{ inputProps: { min: 1, max: 15 } }}
+            InputProps={{ inputProps: { min: 1, max: 20 } }}
             className={classes.input}
             variant={'outlined'}
             value={dressiaLevel[1]}
@@ -678,7 +678,7 @@ const App: React.FC = () => {
           />
           <TextField
             type={'number'}
-            InputProps={{ inputProps: { min: 1, max: 15 } }}
+            InputProps={{ inputProps: { min: 1, max: 20 } }}
             className={classes.input}
             variant={'outlined'}
             value={dressiaLevel[2]}
